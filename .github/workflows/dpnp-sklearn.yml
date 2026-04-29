@@ -14,15 +14,14 @@ on:
 
 env:
   SKLEARN_REPOSITORY: https://github.com/scikit-learn/scikit-learn.git
+  SKLEARN_DIR_NAME: scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
+  VENV_DIR_NAME: scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   dpnp-sklearn:
     name: Run dpnp scikit-learn tests
     runs-on: [self-hosted, Linux, X64, intel-gpu]
     timeout-minutes: 90
-    env:
-      SKLEARN_DIR: ${{ runner.temp }}/scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
-      VENV_DIR: ${{ runner.temp }}/scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
       - name: Show runner and Intel GPU info
@@ -41,6 +40,7 @@ jobs:
         run: |
           set -euxo pipefail
           SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-main}"
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           git init "${SKLEARN_DIR}"
           git -C "${SKLEARN_DIR}" remote add origin "${SKLEARN_REPOSITORY}"
           git -C "${SKLEARN_DIR}" fetch --depth=1 origin "${SCIKIT_LEARN_REF}"
@@ -50,6 +50,7 @@ jobs:
       - name: Create virtual environment
         run: |
           set -euxo pipefail
+          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           python3 -m venv "${VENV_DIR}"
           source "${VENV_DIR}/bin/activate"
           python -m pip install --upgrade pip setuptools wheel ninja pytest
@@ -57,21 +58,26 @@ jobs:
       - name: Build and install scikit-learn from source
         run: |
           set -euxo pipefail
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
           python -m pip install --verbose "${SKLEARN_DIR}[tests]"
 
       - name: Install dpnp
         run: |
           set -euxo pipefail
+          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
           python -m pip install --upgrade dpnp
           python -m pip check
 
       - name: Run dpnp tests
-        working-directory: ${{ env.SKLEARN_DIR }}
         run: |
           set -euxo pipefail
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
+          cd "${SKLEARN_DIR}"
           python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
           python -c "import sklearn; sklearn.show_versions()"
           SCIPY_ARRAY_API=1 pytest sklearn -k dpnp
