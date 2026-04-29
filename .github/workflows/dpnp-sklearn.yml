@@ -14,14 +14,15 @@ on:
 
 env:
   SKLEARN_REPOSITORY: https://github.com/scikit-learn/scikit-learn.git
-  SKLEARN_DIR: ${{ runner.temp }}/scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
-  VENV_DIR: ${{ runner.temp }}/scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   dpnp-sklearn:
     name: Run dpnp scikit-learn tests
     runs-on: [self-hosted, Linux, X64, intel-gpu]
     timeout-minutes: 90
+    env:
+      SKLEARN_DIR: ${{ runner.temp }}/scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
+      VENV_DIR: ${{ runner.temp }}/scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
       - name: Show runner and Intel GPU info
