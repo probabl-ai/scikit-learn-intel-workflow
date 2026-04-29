@@ -59,7 +59,10 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           python3 -m venv "${VENV_DIR}"
           source "${VENV_DIR}/bin/activate"
-          python -m pip install --upgrade pip setuptools wheel ninja pytest
+          python -m pip install --upgrade \
+            pip setuptools wheel ninja pytest \
+            "numpy>=2" "scipy>=1.10.0" \
+            "cython>=3.1.2" "meson-python>=0.17.1"
 
       - name: Build and install scikit-learn from source
         run: |
@@ -67,7 +70,7 @@ jobs:
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
-          python -m pip install --verbose "${SKLEARN_DIR}[tests]"
+          python -m pip install --verbose --no-build-isolation --editable "${SKLEARN_DIR}[tests]"
 
       - name: Install dpnp
         run: |
@@ -84,7 +87,6 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
           cd "${SKLEARN_DIR}"
-          export PYTHONSAFEPATH=1
           python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
           python -c "import sklearn; sklearn.show_versions()"
           SCIPY_ARRAY_API=1 pytest sklearn -k dpnp
