@@ -84,6 +84,7 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
           cd "${SKLEARN_DIR}"
+          export PYTHONSAFEPATH=1
           python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
           python -c "import sklearn; sklearn.show_versions()"
           SCIPY_ARRAY_API=1 pytest sklearn -k dpnp
