@@ -5,7 +5,7 @@ on:
 
 jobs:
   hello-gpu:
-    runs-on: [arthur-framework, intel-gpu]
+    runs-on: [self-hosted, Linux, X64, intel-gpu]
 
     steps:
       - name: Show machine info
