@@ -6,6 +6,11 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
+      scikit_learn_repository:
+        description: "scikit-learn repository URL to clone"
+        required: false
+        default: "https://github.com/scikit-learn/scikit-learn.git"
+        type: string
       scikit_learn_ref:
         description: "scikit-learn branch, tag, or commit to test"
         required: false
@@ -13,7 +18,6 @@ on:
         type: string
 
 env:
-  SKLEARN_REPOSITORY: https://github.com/scikit-learn/scikit-learn.git
   SKLEARN_DIR_NAME: scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
   VENV_DIR_NAME: scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
@@ -36,9 +40,11 @@ jobs:
 
       - name: Clone scikit-learn
         env:
+          SKLEARN_REPOSITORY: ${{ inputs.scikit_learn_repository }}
           SCIKIT_LEARN_REF: ${{ inputs.scikit_learn_ref }}
         run: |
           set -euxo pipefail
+          SKLEARN_REPOSITORY="${SKLEARN_REPOSITORY:-https://github.com/scikit-learn/scikit-learn.git}"
           SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-main}"
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           git init "${SKLEARN_DIR}"
