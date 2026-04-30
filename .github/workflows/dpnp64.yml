@@ -1,4 +1,4 @@
-name: dpnp scikit-learn
+name: dpnp-float64
 
 permissions:
   contents: read
@@ -9,12 +9,12 @@ on:
       scikit_learn_repository:
         description: "scikit-learn repository URL to clone"
         required: false
-        default: "https://github.com/ogrisel/scikit-learn.git"
+        default: "https://github.com/scikit-learn/scikit-learn.git"
         type: string
       scikit_learn_ref:
         description: "scikit-learn branch, tag, or commit to test"
         required: false
-        default: "array-api-dpnp"
+        default: "main"
         type: string
 
 env:
@@ -24,7 +24,7 @@ env:
 jobs:
   dpnp-sklearn:
     name: Run dpnp scikit-learn tests
-    runs-on: [self-hosted, Linux, X64, intel-gpu]
+    runs-on: [self-hosted, Linux, X64, intel-gpu, float64-gpu]
     timeout-minutes: 90
 
     steps:
