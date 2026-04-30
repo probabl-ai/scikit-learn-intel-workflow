@@ -72,15 +72,15 @@ jobs:
           source "${VENV_DIR}/bin/activate"
           python -m pip install --verbose --no-build-isolation --editable "${SKLEARN_DIR}[tests]"
 
-      - name: Install dpnp
+      - name: Install pytorch XPU
         run: |
           set -euxo pipefail
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
-          python -m pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
+          python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
           python -m pip check
 
-      - name: Run dpnp tests
+      - name: Run XPU tests
         run: |
           set -euxo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
