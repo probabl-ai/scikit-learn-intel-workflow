@@ -18,12 +18,12 @@ on:
         type: string
 
 env:
-  SKLEARN_DIR_NAME: scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
-  VENV_DIR_NAME: scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
+  SKLEARN_DIR_NAME: scikit-learn-torch-xpu-${{ github.run_id }}-${{ github.run_attempt }}
+  VENV_DIR_NAME: scikit-learn-torch-xpu-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
-  dpnp-sklearn:
-    name: Run dpnp scikit-learn tests
+  torch-xpu-sklearn:
+    name: Run torch-xpu scikit-learn tests
     runs-on: [self-hosted, Linux, X64, intel-gpu, float64-gpu]
     timeout-minutes: 90
 
