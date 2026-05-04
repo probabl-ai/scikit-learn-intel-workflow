@@ -1,7 +1,6 @@
 name: torch-xpu
 
-permissions:
-  contents: read
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -24,16 +23,15 @@ env:
 jobs:
   torch-xpu-sklearn:
     name: Run torch-xpu scikit-learn tests
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, intel-gpu, float64-gpu]
     timeout-minutes: 90
 
     steps:
       - name: Show runner and Intel GPU info
         run: |
-          set -exo pipefail
-          hostname
-          uname -a
-          whoami
+          set -euo pipefail
+          uname -srmo
           python3 --version
           command -v clinfo && clinfo || true
           ls -l /dev/dri || true
@@ -43,7 +41,7 @@ jobs:
           SKLEARN_REPOSITORY: ${{ inputs.scikit_learn_repository }}
           SCIKIT_LEARN_REF: ${{ inputs.scikit_learn_ref }}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           SKLEARN_REPOSITORY="${SKLEARN_REPOSITORY:-https://github.com/scikit-learn/scikit-learn.git}"
           SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-main}"
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
@@ -55,7 +53,7 @@ jobs:
 
       - name: Create virtual environment
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           python3 -m venv "${VENV_DIR}"
           source "${VENV_DIR}/bin/activate"
@@ -66,7 +64,7 @@ jobs:
 
       - name: Build and install scikit-learn from source
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
@@ -74,7 +72,7 @@ jobs:
 
       - name: Install pytorch XPU
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
           python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
@@ -82,7 +80,7 @@ jobs:
 
       - name: Run XPU tests
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
@@ -90,3 +88,9 @@ jobs:
           python -c "import torch; print(torch.xpu.is_available())"
           python -c "import sklearn; sklearn.show_versions()"
           SCIPY_ARRAY_API=1 pytest sklearn -k xpu
+
+      - name: Clean runner temp
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" "${RUNNER_TEMP:?}/${VENV_DIR_NAME}"
