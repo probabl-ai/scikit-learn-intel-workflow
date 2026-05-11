@@ -1,2 +1,7 @@
 # scikit-learn-intel-workflow
-Run workflows requiring intel-hardware on a self-hosted runner
+
+Run scikit-learn tests (in particular array API tests) on Intel-hardware on a self-hosted runner.
+
+Latest run information available at:
+
+https://github.com/probabl-ai/scikit-learn-intel-workflow/actions
