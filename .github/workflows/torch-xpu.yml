@@ -15,6 +15,14 @@ on:
         required: false
         default: "main"
         type: string
+      torch_xpu_build:
+        description: "PyTorch XPU wheel build to install"
+        required: false
+        default: "stable"
+        type: choice
+        options:
+          - stable
+          - nightly
 
 env:
   SKLEARN_DIR_NAME: scikit-learn-torch-xpu-${{ github.run_id }}-${{ github.run_attempt }}
@@ -71,11 +79,18 @@ jobs:
           python -m pip install --verbose --no-build-isolation --editable "${SKLEARN_DIR}[tests]"
 
       - name: Install pytorch XPU
+        env:
+          TORCH_XPU_BUILD: ${{ inputs.torch_xpu_build }}
         run: |
           set -euo pipefail
           VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
           source "${VENV_DIR}/bin/activate"
-          python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
+          TORCH_XPU_BUILD="${TORCH_XPU_BUILD:-stable}"
+          if [[ "${TORCH_XPU_BUILD}" == "nightly" ]]; then
+            python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu
+          else
+            python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
+          fi
           python -m pip check
 
       - name: Run XPU tests
