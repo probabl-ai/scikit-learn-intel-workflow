@@ -10,18 +10,9 @@ on:
         required: false
         default: "scikit-learn:main"
         type: string
-      torch_xpu_build:
-        description: "PyTorch XPU wheel build to install"
-        required: false
-        default: "stable"
-        type: choice
-        options:
-          - stable
-          - nightly
 
 env:
   SKLEARN_DIR_NAME: scikit-learn-torch-xpu-${{ github.run_id }}-${{ github.run_attempt }}
-  VENV_DIR_NAME: scikit-learn-torch-xpu-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   torch-xpu-sklearn:
@@ -31,11 +22,25 @@ jobs:
     timeout-minutes: 90
 
     steps:
+      - name: Fetch locked Pixi manifest
+        run: |
+          set -euo pipefail
+          RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}"
+          wget --quiet --output-document=pixi.toml "${RAW_BASE}/pixi.toml"
+          wget --quiet --output-document=pixi.lock "${RAW_BASE}/pixi.lock"
+
+      - name: Install locked pixi environment
+        run: |
+          set -euo pipefail
+          PIXI_VERSION="$(pixi --version)"
+          test "${PIXI_VERSION}" = "pixi 0.68.1"
+          pixi install --locked -e torch-xpu
+
       - name: Show runner and Intel GPU info
         run: |
           set -euo pipefail
           uname -srmo
-          python3 --version
+          pixi run -e torch-xpu python --version
           lscpu || true
           lscpu --extended=CPU,CORE,SOCKET,ONLINE,MAXMHZ,MINMHZ,MHZ,MODELNAME || true
           lscpu --caches || true
@@ -59,54 +64,30 @@ jobs:
           git -C "${SKLEARN_DIR}" checkout --detach FETCH_HEAD
           git -C "${SKLEARN_DIR}" rev-parse --short HEAD
 
-      - name: Create virtual environment
-        run: |
-          set -euo pipefail
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          python3 -m venv "${VENV_DIR}"
-          source "${VENV_DIR}/bin/activate"
-          python -m pip install --upgrade \
-            pip setuptools wheel ninja pytest \
-            "numpy>=2" "scipy>=1.10.0" \
-            "cython>=3.1.2" "meson-python>=0.17.1"
-
       - name: Build and install scikit-learn from source
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
-          python -m pip install --verbose --no-build-isolation --editable "${SKLEARN_DIR}[tests]"
+          pixi run -e torch-xpu python -m pip install \
+            --verbose --no-build-isolation --no-deps --editable "${SKLEARN_DIR}"
 
-      - name: Install pytorch XPU
-        env:
-          TORCH_XPU_BUILD: ${{ inputs.torch_xpu_build }}
+      - name: Check PyTorch XPU environment
         run: |
           set -euo pipefail
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
-          TORCH_XPU_BUILD="${TORCH_XPU_BUILD:-stable}"
-          if [[ "${TORCH_XPU_BUILD}" == "nightly" ]]; then
-            python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu
-          else
-            python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
-          fi
-          python -m pip check
-          python -c "import torch; print(torch.__version__, torch.xpu.is_available(), torch.xpu.device_count() if torch.xpu.is_available() else 0)"
+          pixi run -e torch-xpu python -m pip check
+          pixi run -e torch-xpu python -c "import torch; print(torch.__version__, torch.xpu.is_available(), torch.xpu.device_count() if torch.xpu.is_available() else 0)"
 
       - name: Run XPU tests
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
           cd "${SKLEARN_DIR}"
-          python -c "import torch; print(torch.xpu.is_available())"
-          python -c "import sklearn; sklearn.show_versions()"
-          SCIPY_ARRAY_API=1 pytest sklearn -k xpu
+          pixi run -e torch-xpu python -c "import torch; print(torch.xpu.is_available())"
+          pixi run -e torch-xpu python -c "import sklearn; sklearn.show_versions()"
+          SCIPY_ARRAY_API=1 pixi run -e torch-xpu pytest sklearn -k xpu
 
       - name: Clean runner temp
         if: always()
         run: |
           set -euo pipefail
-          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" "${RUNNER_TEMP:?}/${VENV_DIR_NAME}"
+          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" .pixi pixi.toml pixi.lock

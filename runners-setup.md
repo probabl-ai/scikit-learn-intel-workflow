@@ -14,9 +14,9 @@ Both runners also need the common labels used by the workflows:
 
 ## Manual system setup
 
-The workflows create their own Python virtual environments and install the
-Python dependencies needed for each run. But some lower-level system dependencies
-were installed manually on the runner machines beforehand:
+The workflows install their Python dependencies from the repository Pixi
+lockfile. But some lower-level system dependencies were installed manually on
+the runner machines beforehand:
 
 - Intel GPU drivers, following the Intel client GPU installation instructions
   for Ubuntu:
@@ -27,6 +27,13 @@ were installed manually on the runner machines beforehand:
 The GitHub Actions runner service user must also be able to access the Intel GPU
 device nodes under `/dev/dri`. If the workflows cannot see the GPU, check the
 runner user's group membership and the permissions on `/dev/dri/render*`.
+
+Pixi must be installed on each runner and available on the runner service user's
+`PATH`. The workflows currently require:
+
+```bash
+pixi 0.68.1
+```
 
 ## oneAPI OpenCL runtime installation
 
