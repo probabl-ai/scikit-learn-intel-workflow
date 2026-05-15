@@ -36,8 +36,13 @@ jobs:
           set -euo pipefail
           uname -srmo
           python3 --version
-          command -v clinfo && clinfo || true
+          lscpu || true
+          lscpu --extended=CPU,CORE,SOCKET,ONLINE,MAXMHZ,MINMHZ,MHZ,MODELNAME || true
+          lscpu --caches || true
+          sed -n 's/^/SMT active: /p' /sys/devices/system/cpu/smt/active 2>/dev/null || true
+          command -v lspci && lspci -nn | grep -Ei "vga|3d|display|graphics|intel" || true
           ls -l /dev/dri || true
+          command -v clinfo && clinfo || true
 
       - name: Clone scikit-learn
         env:
@@ -87,6 +92,7 @@ jobs:
             python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/xpu
           fi
           python -m pip check
+          python -c "import torch; print(torch.__version__, torch.xpu.is_available(), torch.xpu.device_count() if torch.xpu.is_available() else 0)"
 
       - name: Run XPU tests
         run: |
