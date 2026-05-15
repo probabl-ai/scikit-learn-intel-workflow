@@ -16,7 +16,7 @@ Available workflows:
 - `dpnp-float64` runs the `dpnp` array API tests on a self-hosted Intel GPU runner labeled `float64-gpu`.
 - `torch-xpu` runs the PyTorch XPU array API tests on a self-hosted Intel GPU runner labeled `float64-gpu`. It can install either stable or nightly PyTorch XPU wheels.
 
-All workflows accept optional inputs for the scikit-learn repository URL and the branch, tag, or commit to test. By default they test `main` from `https://github.com/scikit-learn/scikit-learn.git`.
+All workflows accept an optional `scikit_learn_ref` input in `owner:branch` format, such as `scikit-learn:main` or `cakedev0:doc/dpnp_xpu_support`. The workflow clones `https://github.com/<owner>/scikit-learn.git` and fetches the requested branch. By default, workflows test `scikit-learn:main`.
 
 Note that some runner setup was done manually outside these workflows, including Intel GPU drivers and OpenCL runtime installation.
 See [runners-setup.md](runners-setup.md) for the current runner setup notes.

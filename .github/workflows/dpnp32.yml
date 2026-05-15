@@ -5,15 +5,10 @@ permissions: {}
 on:
   workflow_dispatch:
     inputs:
-      scikit_learn_repository:
-        description: "scikit-learn repository URL to clone"
-        required: false
-        default: "https://github.com/scikit-learn/scikit-learn.git"
-        type: string
       scikit_learn_ref:
-        description: "scikit-learn branch, tag, or commit to test"
+        description: "scikit-learn owner and branch to test, for instance scikit-learn:main or cakedev0:doc/dpnp_xpu_support"
         required: false
-        default: "main"
+        default: "scikit-learn:main"
         type: string
 
 env:
@@ -38,12 +33,12 @@ jobs:
 
       - name: Clone scikit-learn
         env:
-          SKLEARN_REPOSITORY: ${{ inputs.scikit_learn_repository }}
           SCIKIT_LEARN_REF: ${{ inputs.scikit_learn_ref }}
         run: |
           set -euo pipefail
-          SKLEARN_REPOSITORY="${SKLEARN_REPOSITORY:-https://github.com/scikit-learn/scikit-learn.git}"
-          SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-main}"
+          SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-scikit-learn:main}"
+          SKLEARN_REPOSITORY="https://github.com/${SCIKIT_LEARN_REF%%:*}/scikit-learn.git"
+          SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF#*:}"
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           git init "${SKLEARN_DIR}"
           git -C "${SKLEARN_DIR}" remote add origin "${SKLEARN_REPOSITORY}"
