@@ -12,12 +12,12 @@ on:
         type: string
 
 env:
+  PIXI_MANIFEST: ${{ github.workspace }}/pixi.toml
   SKLEARN_DIR_NAME: scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   dpnp-sklearn:
     name: Run dpnp scikit-learn tests
-    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, intel-gpu, float32-gpu]
     timeout-minutes: 90
 
@@ -34,13 +34,13 @@ jobs:
           set -euo pipefail
           PIXI_VERSION="$(pixi --version)"
           test "${PIXI_VERSION}" = "pixi 0.68.1"
-          pixi install --locked -e dpnp
+          pixi install --manifest-path "${PIXI_MANIFEST}" --locked -e dpnp
 
       - name: Show runner and Intel GPU info
         run: |
           set -euo pipefail
           uname -srmo
-          pixi run -e dpnp python --version
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python --version
           lscpu || true
           lscpu --extended=CPU,CORE,SOCKET,ONLINE,MAXMHZ,MINMHZ,MHZ,MODELNAME || true
           lscpu --caches || true
@@ -68,23 +68,23 @@ jobs:
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
-          pixi run -e dpnp python -m pip install \
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -m pip install \
             --verbose --no-build-isolation --no-deps --editable "${SKLEARN_DIR}"
 
       - name: Check dpnp environment
         run: |
           set -euo pipefail
-          pixi run -e dpnp python -m pip check
-          pixi run -e dpnp python -c "import dpctl; print(dpctl.get_devices())" || true
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -m pip check
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpctl; print(dpctl.get_devices())" || true
 
       - name: Run dpnp tests
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
           cd "${SKLEARN_DIR}"
-          pixi run -e dpnp python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
-          pixi run -e dpnp python -c "import sklearn; sklearn.show_versions()"
-          SCIPY_ARRAY_API=1 pixi run -e dpnp pytest sklearn -k dpnp
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import sklearn; sklearn.show_versions()"
+          SCIPY_ARRAY_API=1 pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp pytest sklearn -k dpnp
 
       - name: Clean runner temp
         if: always()
