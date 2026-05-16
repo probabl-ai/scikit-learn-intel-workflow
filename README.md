@@ -13,7 +13,7 @@ Each workflow mostly:
 - clones the requested scikit-learn repository and ref
 - builds scikit-learn from source in a fresh virtual environment
 - installs the relevant array API backend
-- and runs the matching subset of the scikit-learn test suite with `SCIPY_ARRAY_API=1
+- and runs the matching subset of the scikit-learn test suite with `SCIPY_ARRAY_API=1`
 
 Available workflows:
 - `torch-xpu` runs the PyTorch XPU array API tests on a self-hosted machine with a
