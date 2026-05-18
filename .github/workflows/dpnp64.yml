@@ -18,6 +18,7 @@ env:
 jobs:
   dpnp-sklearn:
     name: Run dpnp scikit-learn tests
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, Linux, X64, intel-gpu, float64-gpu]
     timeout-minutes: 90
 
