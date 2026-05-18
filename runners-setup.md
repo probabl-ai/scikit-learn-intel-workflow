@@ -12,6 +12,11 @@ Linux x86_64 laptops with Intel GPUs, but they target different test jobs:
 Both runners also need the common labels used by the workflows:
 `self-hosted`, `Linux`, `X64`, and `intel-gpu`.
 
+For the dedicated Unix user, GitHub Actions runner service, and systemd
+hardening setup, see [runner-isolation-setup.md](runner-isolation-setup.md).
+This file only records the repository-specific runner inventory and host
+runtime dependencies.
+
 ## Manual system setup
 
 The workflows install their Python dependencies from the repository Pixi
@@ -22,18 +27,15 @@ the runner machines beforehand:
   for Ubuntu:
   https://dgpu-docs.intel.com/driver/client/overview.html#ubuntu-latest
 - Intel oneAPI OpenCL runtime, so that `dpnp` and `dpctl` can discover the
-  available CPU and GPU SYCL/OpenCL devices.
+  available CPU and GPU SYCL/OpenCL devices. The CPU OpenCL runtime is required
+  for the CPU side of the `dpnp` test parametrization; otherwise those tests are
+  skipped even when the Intel GPU runtime works.
+- Pixi, available to the GitHub Actions runner service. The workflows currently
+  require `pixi 0.68.1`.
 
-The GitHub Actions runner service user must also be able to access the Intel GPU
-device nodes under `/dev/dri`. If the workflows cannot see the GPU, check the
-runner user's group membership and the permissions on `/dev/dri/render*`.
-
-Pixi must be installed on each runner and available on the runner service user's
-`PATH`. The workflows currently require:
-
-```bash
-pixi 0.68.1
-```
+If a workflow cannot see the expected GPU, first check the runner service user's
+GPU groups and the systemd device allow-list documented in
+[runner-isolation-setup.md](runner-isolation-setup.md).
 
 ## oneAPI OpenCL runtime installation
 
@@ -70,16 +72,10 @@ ls -l /dev/dri
 # Confirm that OpenCL devices are visible, if clinfo is installed.
 clinfo
 
-# Confirm that dpctl can list devices from a clean Python environment.
-python3 -m venv /tmp/dpctl-check
-source /tmp/dpctl-check/bin/activate
-python -m pip install --upgrade pip dpctl dpnp
-python -c "import dpctl; print(dpctl.get_devices())"
-python -c "import dpnp; print(dpnp.__version__)"
-deactivate
-rm -rf /tmp/dpctl-check
+# Confirm that both CPU and GPU OpenCL devices are visible.
+clinfo | grep -E "Device Type|Device Name"
 ```
 
-The workflows also print runner, Python, OpenCL, and `/dev/dri` information at
-the start of each job. Those logs are the first place to check when a runner is
-online but a backend cannot find the expected Intel device.
+The workflows also print runner, Python, OpenCL, `dpctl`, and `/dev/dri`
+information near the start of each job. Those logs are the first place to check
+when a runner is online but a backend cannot find the expected Intel device.
