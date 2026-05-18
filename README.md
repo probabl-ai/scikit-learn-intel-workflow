@@ -25,6 +25,22 @@ Available workflows:
 All workflows accept an optional `scikit_learn_ref` input in `owner:branch` format, such as `scikit-learn:main` or `cakedev0:doc/dpnp_xpu_support`. The workflow clones `https://github.com/<owner>/scikit-learn.git` and fetches the requested branch. By default, workflows test `scikit-learn:main`.
 
 
+## Dependency locking
+
+Common build/test dependencies, `dpnp`, and PyTorch XPU are managed by Pixi in
+[`pixi.toml`](pixi.toml) and locked in [`pixi.lock`](pixi.lock).
+
+The manifest intentionally does not use `exclude-newer` yet. Attempts to apply a 7-day cooldown exposed
+incompatibilities with the PyTorch XPU index metadata and package publication times
+(see [pytorch/pytorch#179374 (comment)](https://github.com/pytorch/pytorch/issues/179374#issuecomment-4467404210)).
+
+This means lockfile refreshes are not safe to automate for now. We'll refresh it manually only when scikit-learn
+needs compatibility updates. And when we do, we'll wait for ~7 days before merging the update lockfile, and we'll check
+no supply chain attacks happened during this time.
+
+Refresh command is `pixi update --no-install`.
+
+
 ## CI Runners
 
 The runner labeled `float64-gpu` is a dedicated laptop with an integrated Intel GPU that sits on [ogrisel](https://github.com/ogrisel) personal office desk for now.

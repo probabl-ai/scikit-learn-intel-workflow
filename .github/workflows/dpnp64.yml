@@ -12,8 +12,8 @@ on:
         type: string
 
 env:
+  PIXI_MANIFEST: ${{ github.workspace }}/pixi.toml
   SKLEARN_DIR_NAME: scikit-learn-dpnp-${{ github.run_id }}-${{ github.run_attempt }}
-  VENV_DIR_NAME: scikit-learn-dpnp-venv-${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
   dpnp-sklearn:
@@ -23,11 +23,25 @@ jobs:
     timeout-minutes: 90
 
     steps:
+      - name: Fetch locked Pixi manifest
+        run: |
+          set -euo pipefail
+          RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}"
+          wget --quiet --output-document=pixi.toml "${RAW_BASE}/pixi.toml"
+          wget --quiet --output-document=pixi.lock "${RAW_BASE}/pixi.lock"
+
+      - name: Install locked pixi environment
+        run: |
+          set -euo pipefail
+          PIXI_VERSION="$(pixi --version)"
+          test "${PIXI_VERSION}" = "pixi 0.68.1"
+          pixi install --manifest-path "${PIXI_MANIFEST}" --locked -e dpnp
+
       - name: Show runner and Intel GPU info
         run: |
           set -euo pipefail
           uname -srmo
-          python3 --version
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python --version
           lscpu || true
           lscpu --extended=CPU,CORE,SOCKET,ONLINE,MAXMHZ,MINMHZ,MHZ,MODELNAME || true
           lscpu --caches || true
@@ -51,47 +65,30 @@ jobs:
           git -C "${SKLEARN_DIR}" checkout --detach FETCH_HEAD
           git -C "${SKLEARN_DIR}" rev-parse --short HEAD
 
-      - name: Create virtual environment
-        run: |
-          set -euo pipefail
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          python3 -m venv "${VENV_DIR}"
-          source "${VENV_DIR}/bin/activate"
-          python -m pip install --upgrade \
-            pip setuptools wheel ninja pytest \
-            "numpy>=2" "scipy>=1.10.0" \
-            "cython>=3.1.2" "meson-python>=0.17.1"
-
       - name: Build and install scikit-learn from source
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
-          python -m pip install --verbose --no-build-isolation --editable "${SKLEARN_DIR}[tests]"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -m pip install \
+            --verbose --no-build-isolation --no-deps --editable "${SKLEARN_DIR}"
 
-      - name: Install dpnp
+      - name: Check dpnp environment
         run: |
           set -euo pipefail
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
-          python -m pip install --upgrade dpnp
-          python -m pip check
-          python -c "import dpctl; print(dpctl.get_devices())" || true
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -m pip check
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpctl; print(dpctl.get_devices())" || true
 
       - name: Run dpnp tests
         run: |
           set -euo pipefail
           SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
-          VENV_DIR="${RUNNER_TEMP}/${VENV_DIR_NAME}"
-          source "${VENV_DIR}/bin/activate"
           cd "${SKLEARN_DIR}"
-          python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
-          python -c "import sklearn; sklearn.show_versions()"
-          SCIPY_ARRAY_API=1 pytest sklearn -k dpnp
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import sklearn; sklearn.show_versions()"
+          SCIPY_ARRAY_API=1 pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp pytest sklearn -k dpnp
 
       - name: Clean runner temp
         if: always()
         run: |
           set -euo pipefail
-          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" "${RUNNER_TEMP:?}/${VENV_DIR_NAME}"
+          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" .pixi pixi.toml pixi.lock
