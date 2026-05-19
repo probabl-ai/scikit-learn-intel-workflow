@@ -1,0 +1,137 @@
+name: array-api-intel
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      scikit_learn_ref:
+        description: "scikit-learn owner and branch to test, for instance scikit-learn:main or cakedev0:doc/dpnp_xpu_support"
+        required: false
+        default: "scikit-learn:main"
+        type: string
+
+env:
+  PIXI_MANIFEST: ${{ github.workspace }}/pixi.toml
+
+jobs:
+  test-array-api:
+    name: ${{ matrix.test_name }}
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_name: dpnp-cpu-with-float32-gpu
+            environment: dpnp
+            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float32-gpu"]'
+            sklearn_dir_prefix: scikit-learn-dpnp-cpu-float32-gpu
+            pytest_filter: "dpnp and cpu"
+          - test_name: dpnp-gpu-with-float32-gpu
+            environment: dpnp
+            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float32-gpu"]'
+            sklearn_dir_prefix: scikit-learn-dpnp-gpu-float32-gpu
+            pytest_filter: "dpnp and gpu"
+          - test_name: dpnp-cpu-with-float64-gpu
+            environment: dpnp
+            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            sklearn_dir_prefix: scikit-learn-dpnp-cpu-float64-gpu
+            pytest_filter: "dpnp and cpu"
+          - test_name: dpnp-gpu-with-float64-gpu
+            environment: dpnp
+            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            sklearn_dir_prefix: scikit-learn-dpnp-gpu-float64-gpu
+            pytest_filter: "dpnp and gpu"
+          - test_name: torch-xpu
+            environment: torch-xpu
+            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            sklearn_dir_prefix: scikit-learn-torch-xpu
+            pytest_filter: "xpu"
+
+    steps:
+      - name: Fetch locked Pixi manifest
+        run: |
+          set -euo pipefail
+          RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}"
+          wget --quiet --output-document=pixi.toml "${RAW_BASE}/pixi.toml"
+          wget --quiet --output-document=pixi.lock "${RAW_BASE}/pixi.lock"
+
+      - name: Install locked pixi environment
+        run: |
+          set -euo pipefail
+          PIXI_VERSION="$(pixi --version)"
+          test "${PIXI_VERSION}" = "pixi 0.68.1"
+          pixi install --manifest-path "${PIXI_MANIFEST}" --locked -e "${{ matrix.environment }}"
+
+      - name: Show runner and Intel GPU info
+        run: |
+          set -euo pipefail
+          uname -srmo
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e "${{ matrix.environment }}" python --version
+          lscpu || true
+          lscpu --extended=CPU,CORE,SOCKET,ONLINE,MAXMHZ,MINMHZ,MHZ,MODELNAME || true
+          lscpu --caches || true
+          sed -n 's/^/SMT active: /p' /sys/devices/system/cpu/smt/active 2>/dev/null || true
+          command -v lspci && lspci -nn | grep -Ei "vga|3d|display|graphics|intel" || true
+          ls -l /dev/dri || true
+          command -v clinfo && clinfo || true
+
+      - name: Clone scikit-learn
+        env:
+          SCIKIT_LEARN_REF: ${{ inputs.scikit_learn_ref }}
+          SKLEARN_DIR_NAME: ${{ matrix.sklearn_dir_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF:-scikit-learn:main}"
+          SKLEARN_REPOSITORY="https://github.com/${SCIKIT_LEARN_REF%%:*}/scikit-learn.git"
+          SCIKIT_LEARN_REF="${SCIKIT_LEARN_REF#*:}"
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          git init "${SKLEARN_DIR}"
+          git -C "${SKLEARN_DIR}" remote add origin "${SKLEARN_REPOSITORY}"
+          git -C "${SKLEARN_DIR}" fetch --depth=1 origin "${SCIKIT_LEARN_REF}"
+          git -C "${SKLEARN_DIR}" checkout --detach FETCH_HEAD
+          git -C "${SKLEARN_DIR}" rev-parse --short HEAD
+
+      - name: Build and install scikit-learn from source
+        env:
+          SKLEARN_DIR_NAME: ${{ matrix.sklearn_dir_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e "${{ matrix.environment }}" python -m pip install \
+            --verbose --no-build-isolation --no-deps --editable "${SKLEARN_DIR}"
+
+      - name: Check ${{ matrix.environment }} environment
+        env:
+          SKLEARN_DIR_NAME: ${{ matrix.sklearn_dir_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          cd "${SKLEARN_DIR}"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e "${{ matrix.environment }}" python -c "import sklearn; sklearn.show_versions()"
+          pixi run --manifest-path "${PIXI_MANIFEST}" -e "${{ matrix.environment }}" python -m pip check
+          if test "${{ matrix.environment }}" = "dpnp"; then
+            pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpctl; print(dpctl.get_devices())"
+            pixi run --manifest-path "${PIXI_MANIFEST}" -e dpnp python -c "import dpnp; print(f'dpnp {dpnp.__version__}')"
+          else
+            pixi run --manifest-path "${PIXI_MANIFEST}" -e torch-xpu python -c "import torch; print(torch.__version__, torch.xpu.is_available(), torch.xpu.device_count() if torch.xpu.is_available() else 0)"
+          fi
+
+      - name: Run ${{ matrix.test_name }} tests
+        env:
+          SKLEARN_DIR_NAME: ${{ matrix.sklearn_dir_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          SKLEARN_DIR="${RUNNER_TEMP}/${SKLEARN_DIR_NAME}"
+          cd "${SKLEARN_DIR}"
+          SCIPY_ARRAY_API=1 pixi run --manifest-path "${PIXI_MANIFEST}" -e "${{ matrix.environment }}" pytest sklearn -k "${{ matrix.pytest_filter }}"
+
+      - name: Clean runner temp
+        if: always()
+        env:
+          SKLEARN_DIR_NAME: ${{ matrix.sklearn_dir_prefix }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          rm -rf "${RUNNER_TEMP:?}/${SKLEARN_DIR_NAME}" .pixi pixi.toml pixi.lock

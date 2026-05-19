@@ -9,20 +9,23 @@ to limit security impacts: in particular it's not possible to trigger those work
 pull request but only via manual trigger by a limited list of authorized GitHub accounts.
 We can grant access to trigger the CI to scikit-learn maintainers on request.
 
-Each workflow mostly:
+The `array-api-intel` workflow mostly:
 - clones the requested scikit-learn repository and ref
 - builds scikit-learn from source in a fresh virtual environment
 - installs the relevant array API backend
 - and runs the matching subset of the scikit-learn test suite with `SCIPY_ARRAY_API=1`
 
-Available workflows:
+The workflow exposes separate jobs by backend, tested device, and runner GPU
+capability:
 - `torch-xpu` runs the PyTorch XPU array API tests on a self-hosted machine with a
   [compatible GPU](https://docs.pytorch.org/docs/2.12/notes/get_start_xpu.html#intel-client-gpu). This runner is labeled `float64-gpu`.
-- `dpnp-float64` runs the `dpnp` array API tests (CPU and GPU)  on the same `float64-gpu` runner.
-- `dpnp-float32` runs the `dpnp` array API tests (CPU and GPU) on a second machine with a GPU that does not support float64 operations,
+- `dpnp-cpu-with-float64-gpu` and `dpnp-gpu-with-float64-gpu` run the `dpnp`
+  CPU and GPU Array API tests on the same `float64-gpu` runner.
+- `dpnp-cpu-with-float32-gpu` and `dpnp-gpu-with-float32-gpu` run the `dpnp`
+  CPU and GPU Array API tests on a second machine with a GPU that does not support float64 operations,
   which allows to catch some edge cases. This runner is labeled `float32-gpu`.
 
-All workflows accept an optional `scikit_learn_ref` input in `owner:branch` format, such as `scikit-learn:main` or `cakedev0:doc/dpnp_xpu_support`. The workflow clones `https://github.com/<owner>/scikit-learn.git` and fetches the requested branch. By default, workflows test `scikit-learn:main`.
+The workflow accepts an optional `scikit_learn_ref` input in `owner:branch` format, such as `scikit-learn:main` or `cakedev0:doc/dpnp_xpu_support`. The workflow clones `https://github.com/<owner>/scikit-learn.git` and fetches the requested branch. By default, the workflow tests `scikit-learn:main`.
 
 
 ## Dependency locking

@@ -4,12 +4,13 @@ This repository currently uses two self-hosted GitHub Actions runners. Both are
 Linux x86_64 laptops with Intel GPUs, but they target different test jobs:
 
 - `float64-gpu`: runner with an Intel GPU that supports float64 operations. This
-  runner is used by the `dpnp-float64` and `torch-xpu` workflows.
+  runner is used by the `array-api-intel` workflow for `dpnp` and `torch-xpu`
+  jobs.
 - `float32-gpu`: runner with an Intel GPU that supports float32 operations. This
-  runner is used by the `dpnp-float32` workflow and is not currently compatible
-  with the `torch-xpu` workflow.
+  runner is used by the `array-api-intel` workflow for `dpnp` jobs and is not
+  currently compatible with `torch-xpu` jobs.
 
-Both runners also need the common labels used by the workflows:
+Both runners also need the common labels used by the workflow:
 `self-hosted`, `Linux`, `X64`, and `intel-gpu`.
 
 For the dedicated Unix user, GitHub Actions runner service, and systemd
@@ -19,7 +20,7 @@ runtime dependencies.
 
 ## Manual system setup
 
-The workflows install their Python dependencies from the repository Pixi
+The workflow jobs install their Python dependencies from the repository Pixi
 lockfile. But some lower-level system dependencies were installed manually on
 the runner machines beforehand:
 
@@ -30,7 +31,7 @@ the runner machines beforehand:
   available CPU and GPU SYCL/OpenCL devices. The CPU OpenCL runtime is required
   for the CPU side of the `dpnp` test parametrization; otherwise those tests are
   skipped even when the Intel GPU runtime works.
-- Pixi, available to the GitHub Actions runner service. The workflows currently
+- Pixi, available to the GitHub Actions runner service. The workflow currently
   require `pixi 0.68.1`.
 
 If a workflow cannot see the expected GPU, first check the runner service user's
@@ -63,7 +64,7 @@ sudo apt install intel-oneapi-runtime-opencl
 ## Validation checks
 
 After changing runner setup, run a few checks directly on the runner machine
-before triggering the GitHub Actions workflows:
+before triggering the GitHub Actions workflow:
 
 ```bash
 # Confirm that the Intel GPU device nodes are present.
@@ -76,6 +77,6 @@ clinfo
 clinfo | grep -E "Device Type|Device Name"
 ```
 
-The workflows also print runner, Python, OpenCL, `dpctl`, and `/dev/dri`
+The workflow jobs also print runner, Python, OpenCL, `dpctl`, and `/dev/dri`
 information near the start of each job. Those logs are the first place to check
 when a runner is online but a backend cannot find the expected Intel device.

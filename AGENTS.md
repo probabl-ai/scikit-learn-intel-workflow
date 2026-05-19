@@ -9,9 +9,9 @@ temporary environment, install backend dependencies, run tests, and clean up.
 
 ## Project Structure
 
-- `.github/workflows/dpnp32.yml`: runs dpnp tests on a float32 Intel GPU runner.
-- `.github/workflows/dpnp64.yml`: runs dpnp tests on a float64 Intel GPU runner.
-- `.github/workflows/torch-xpu.yml`: runs PyTorch XPU tests on a float64 runner.
+- `.github/workflows/array-api-intel.yml`: runs matrix jobs for dpnp CPU/GPU
+  tests on float32 and float64 Intel GPU runners, plus PyTorch XPU tests on a
+  float64 runner.
 - `README.md`: describes workflow purpose, inputs, and runner labels.
 - `runners-setup.md`: records self-hosted Intel GPU runner setup notes.
 
@@ -20,11 +20,11 @@ temporary environment, install backend dependencies, run tests, and clean up.
 There is no local build. Useful checks are:
 
 - `git diff --check`: catch whitespace and patch formatting issues.
-- `gh workflow run dpnp64.yml -f scikit_learn_ref=scikit-learn:main`: trigger a
+- `gh workflow run array-api-intel.yml -f scikit_learn_ref=scikit-learn:main`: trigger a
   workflow manually, if you have runner access.
 
 The actual test commands are inside the workflow YAML files, for example
-`SCIPY_ARRAY_API=1 pytest sklearn -k dpnp` and
+`SCIPY_ARRAY_API=1 pytest sklearn -k "dpnp and gpu"` and
 `SCIPY_ARRAY_API=1 pytest sklearn -k xpu`.
 
 ## Style Guidelines
