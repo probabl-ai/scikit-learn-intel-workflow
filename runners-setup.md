@@ -31,8 +31,8 @@ the runner machines beforehand:
   available CPU and GPU SYCL/OpenCL devices. The CPU OpenCL runtime is required
   for the CPU side of the `dpnp` test parametrization; otherwise those tests are
   skipped even when the Intel GPU runtime works.
-- Pixi, available to the GitHub Actions runner service. The workflow currently
-  require `pixi 0.68.1`.
+- Pixi, available to the GitHub Actions runner service. The workflow requires
+  a Pixi version satisfying `requires-pixi` in [`pixi.toml`](pixi.toml).
 
 If a workflow cannot see the expected GPU, first check the runner service user's
 GPU groups and the systemd device allow-list documented in

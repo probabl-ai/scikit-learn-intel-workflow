@@ -61,8 +61,7 @@ jobs:
       - name: Install locked pixi environment
         run: |
           set -euo pipefail
-          PIXI_VERSION="$(pixi --version)"
-          test "${PIXI_VERSION}" = "pixi 0.68.1"
+          pixi --version
           pixi install --manifest-path "${PIXI_MANIFEST}" --locked -e "${{ matrix.environment }}"
 
       - name: Show runner and Intel GPU info

@@ -37,7 +37,8 @@ The host needs:
 
 - the GitHub Actions runner for Linux x64;
 - `git`, `wget`, `curl`, and a compiler toolchain;
-- `pixi 0.68.1` on the runner service `PATH`;
+- `pixi` on the runner service `PATH`, satisfying `requires-pixi` in
+  [`pixi.toml`](pixi.toml);
 - Intel GPU drivers and OpenCL / Level Zero runtime;
 - Intel CPU OpenCL runtime for the CPU side of the `dpnp` tests;
 - `clinfo` for diagnostics.
@@ -58,7 +59,8 @@ sudo apt-get install --no-install-recommends \
 See [runners-setup.md](runners-setup.md) for the Intel driver, oneAPI OpenCL
 runtime, and Pixi notes.
 
-Install the pinned Pixi binary somewhere visible to systemd, for example:
+Install a compatible Pixi binary somewhere visible to systemd. This example
+uses `pixi 0.68.1`, which satisfies the current manifest requirement:
 
 ```bash
 curl -fsSL https://pixi.sh/install.sh \
@@ -71,7 +73,7 @@ Validate:
 sudo -u gha-runner -H env PATH=/usr/local/bin:/usr/bin:/bin pixi --version
 ```
 
-Expected:
+Expected output should show a compatible Pixi version, for example:
 
 ```text
 pixi 0.68.1
@@ -212,7 +214,8 @@ Expected:
 
 - `whoami` is `gha-runner`;
 - `groups` has only the runner group and required GPU groups;
-- `pixi --version` is `pixi 0.68.1`;
+- `pixi --version` reports a version compatible with
+  [`pixi.toml`](pixi.toml);
 - `clinfo` sees the expected Intel GPU and CPU OpenCL devices.
 
 If `clinfo` works with `sudo -u gha-runner -H` but the workflow only sees part
