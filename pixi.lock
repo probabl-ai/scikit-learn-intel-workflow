@@ -203,7 +203,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
       - pypi: https://download-r2.pytorch.org/whl/triton_xpu-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://download-r2.pytorch.org/whl/xpu/torch-2.12.0%2Bxpu-cp312-cp312-linux_x86_64.whl
+      - pypi: https://download-r2.pytorch.org/whl/xpu/torch-2.12.1%2Bxpu-cp312-cp312-linux_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/08/59/8d381a2cfe8d36c4f4ff9f94769ff2809bfc16014d888360b0e24c7e5c6b/tbb-2022.3.1-py2.py3-none-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/1b/d7/ffb7e58ac260737b5076e2738ce198468a4efb3ba1885bced038801c387a/intel_cmplr_lib_rt-2025.3.2-py2.py3-none-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/24/f6/f4e38bb1a81fbda3afa2d79aa95b5a5d73c838977c1f86fbf73e7dafe676/onemkl_sycl_lapack-2025.3.1-py2.py3-none-manylinux_2_28_x86_64.whl
@@ -938,16 +938,16 @@ packages:
 - pypi: https://download-r2.pytorch.org/whl/triton_xpu-3.7.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: triton-xpu
   version: 3.7.1
-  sha256: 4e46e71e077cf483404a4c17ce40d71c5f0e13a81459139d4346ca427b1dd455
+  sha256: a31c058c5c2e78ebe490a2e69f2f50caec6b1307ac096e944f116fdc06819d9a
   index: https://download.pytorch.org/whl/xpu
   requires_dist:
   - pyelftools
   - importlib-metadata ; python_full_version < '3.10'
   requires_python: '>=3.10,<3.15'
-- pypi: https://download-r2.pytorch.org/whl/xpu/torch-2.12.0%2Bxpu-cp312-cp312-linux_x86_64.whl
+- pypi: https://download-r2.pytorch.org/whl/xpu/torch-2.12.1%2Bxpu-cp312-cp312-linux_x86_64.whl
   name: torch
-  version: 2.12.0+xpu
-  sha256: f59decc04bec27862ed0197554a52370dbcba3e6892616d1fbce450e402bf2d5
+  version: 2.12.1+xpu
+  sha256: a7c11b8f3754e26afdbd74948dfa4491f5c6f1b31e465b55ef8e47c2b53e0852
   index: https://download.pytorch.org/whl/xpu
   requires_dist:
   - filelock
