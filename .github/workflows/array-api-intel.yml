@@ -36,17 +36,17 @@ jobs:
             pytest_filter: "dpnp and gpu"
           - test_name: dpnp-cpu-with-float64-gpu
             environment: dpnp
-            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            runner_labels: '["Linux", "X64", "intel-gpu", "float64-gpu"]'
             sklearn_dir_prefix: scikit-learn-dpnp-cpu-float64-gpu
             pytest_filter: "dpnp and cpu"
           - test_name: dpnp-gpu-with-float64-gpu
             environment: dpnp
-            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            runner_labels: '["Linux", "X64", "intel-gpu", "float64-gpu"]'
             sklearn_dir_prefix: scikit-learn-dpnp-gpu-float64-gpu
             pytest_filter: "dpnp and gpu"
           - test_name: torch-xpu
             environment: torch-xpu
-            runner_labels: '["self-hosted", "Linux", "X64", "intel-gpu", "float64-gpu"]'
+            runner_labels: '["Linux", "X64", "intel-gpu", "float64-gpu"]'
             sklearn_dir_prefix: scikit-learn-torch-xpu
             pytest_filter: "xpu"
 
