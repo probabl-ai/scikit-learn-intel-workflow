@@ -2,6 +2,17 @@
 
 Run scikit-learn tests (in particular array API tests for `dpnp` and `torch` XPU) on Intel-hardware on a self-hosted runner.
 
+## How to run it
+
+Only a limited list of authorized GitHub accounts can trigger this workflow. If you need access, ask @cakedev0.
+
+Go to "Actions" > "array-api-intel" > "Run workflow". You'll see a panel with two inputs:
+- Use workflow from: keep `main`.
+- scikit-learn owner and branch to test: `owner:branch`, e.g. `scikit-learn:main` or `cakedev0:doc/dpnp_xpu_support`. Defaults to `scikit-learn:main` if left empty.
+
+**Be careful** to run it only for PRs from trusted contributors, or PRs you've carefully reviewed.
+
+
 ## Workflows
 
 The CI runners being self-hosted, we want to keep it isolated from the main scikit-learn CI
