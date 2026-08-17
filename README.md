@@ -12,6 +12,9 @@ Go to "Actions" > "array-api-intel" > "Run workflow". You'll see a panel with tw
 
 **Be careful** to run it only for PRs from trusted contributors, or PRs you've carefully reviewed.
 
+Note: the `float32-gpu` labelled runner can sometimes be offline. In that case, the workflow
+automatically cancels itself after 30 minutes of waiting.
+If the `float64-gpu` tests pass, you can generally consider that enough.
 
 ## Workflows
 
@@ -61,6 +64,8 @@ The runner labeled `float64-gpu` is a dedicated laptop with an integrated Intel 
 On the longer term, we plan to move this runner to a dedicated server available with Probabl and/or Intel supporting the hosting fees.
 
 The Runner labeled `float32-gpu` is [cakedev0](https://github.com/cakedev0) personal laptop. It's not always reachable and will likely not be maintained on the longer term.
+If it's offline, the workflow automatically cancels itself after 30 minutes of waiting rather than staying queued indefinitely.
+If the `float64-gpu` tests pass, you can generally consider that enough; the `float32-gpu` tests will be run manually from time to time.
 
 Some runner setup was done manually outside these workflows, including Intel GPU drivers and OpenCL runtime installation.
 See [runners-setup.md](runners-setup.md) for the current runner setup notes.

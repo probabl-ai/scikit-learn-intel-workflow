@@ -15,6 +15,37 @@ env:
   PIXI_MANIFEST: ${{ github.workspace }}/pixi.toml
 
 jobs:
+  cancel-if-float32-gpu-queued:
+    name: Cancel run if float32-gpu runner is unavailable
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      actions: write
+    env:
+      FLOAT32_QUEUE_TIMEOUT_MINUTES: 30
+    steps:
+      - name: Wait for float32-gpu jobs, cancel run if they stay queued too long
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + FLOAT32_QUEUE_TIMEOUT_MINUTES * 60))
+          while true; do
+            statuses=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs" --paginate \
+              --jq '.jobs[] | select(.name | endswith("float32-gpu")) | .status')
+            if [[ -n "${statuses}" ]] && ! echo "${statuses}" | grep -qx queued; then
+              echo "float32-gpu jobs are no longer queued, nothing to do."
+              exit 0
+            fi
+            if (( SECONDS >= deadline )); then
+              echo "float32-gpu runner did not pick up its jobs within ${FLOAT32_QUEUE_TIMEOUT_MINUTES} minutes; cancelling this run."
+              gh run cancel "${GITHUB_RUN_ID}" --repo "${GITHUB_REPOSITORY}"
+              exit 0
+            fi
+            sleep 30
+          done
+
   test-array-api:
     name: ${{ matrix.test_name }}
     if: github.ref == 'refs/heads/main'
